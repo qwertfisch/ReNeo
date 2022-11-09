@@ -660,6 +660,17 @@ bool handleKeyEvent(Scancode scan, bool down) nothrow {
 
     bool shiftDown = isModifierHeld(Modifier.LSHIFT) || isModifierHeld(Modifier.RSHIFT);
     bool mod4Down = isModifierHeld(Modifier.LMOD4) || isModifierHeld(Modifier.RMOD4);
+    bool mod3Down = isModifierHeld(Modifier.LMOD3) || isModifierHeld(Modifier.RMOD3);
+
+    // Toggle mod4 lock with alternative combination shift+mod3+tab
+    if (shiftDown && mod3Down && scan == Scancode(0x0F, false) && down) {
+        // Only toggle on first down event, because tab is a repeating key
+        if (!(scan in heldKeys)) {
+            mod4Lock = !mod4Lock;
+            heldKeys[scan] = VOID_KEY;
+        }
+        return true;
+    }
 
     // handle capslock
     if (capslock && isCapslockable(scan)) {
