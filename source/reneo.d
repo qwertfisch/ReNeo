@@ -391,9 +391,12 @@ void sendNeoKey(NeoKey nk, Scancode realScan, bool down) nothrow {
         lastNeoKey = nk;
     }
 
-    // Special cases for weird mappings
+    // Special cases for weird mappings and void keys
     if (nk.keysym == KEYSYM_VOID && nk.vkCode == VKEY.VK_LBUTTON) {
         sendMouseClick(down);
+        return;
+    }
+    if (nk == VOID_KEY) {
         return;
     }
 
