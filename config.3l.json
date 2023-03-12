@@ -1,6 +1,7 @@
 {
     "standaloneLayout": "3l",
     "standaloneMode": true,
+	"sendKeyMode": "fakeNative",
     "language": "english",
     "filterNeoModifiers": true,
     "autoNumlock": true,

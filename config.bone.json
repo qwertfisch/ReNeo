@@ -1,6 +1,7 @@
 {
     "standaloneLayout": "Bone",
     "standaloneMode": true,
+	"sendKeyMode": "fakeNative",
     "language": "german",
     "filterNeoModifiers": true,
     "autoNumlock": true,

@@ -244,6 +244,11 @@ struct Scancode {
     bool extended;  // whether the extended bit is set for this physical key
 }
 
+enum SendKeyMode {
+    ORIGINAL,    // send scancode of physically pressed keys and "char" entries as unicode
+    FAKE_NATIVE  // send scancode of equivalent key in native layout and replace "char" entries with native key combos if possible
+}
+
 enum NeoKeyType {
     VKEY,
     CHAR

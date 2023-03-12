@@ -15,6 +15,7 @@ import core.sys.windows.windows;
 import mapping;
 import composer;
 import app : configAutoNumlock, configFilterNeoModifiers, configOneHandedModeMirrorKey, configOneHandedModeMirrorMap, updateOSKAsync, toggleOSK, toggleOneHandedMode, lastInputLocale;
+import app : configSendKeyMode;
 
 const SC_FAKE_LSHIFT = 0x22A;
 const SC_FAKE_RSHIFT = 0x236;
@@ -234,7 +235,7 @@ void sendVKWithModifiers(uint vk, Scancode scan, PartialModifierState newForcedM
     SendInput(cast(uint) upInputs.length, upInputs.ptr, INPUT.sizeof);
 }
 
-void sendUTF16OrKeyCombo(wchar unicodeChar, bool down) nothrow {
+void sendUTF16OrKeyCombo(Scancode realScan, wchar unicodeChar, bool down) nothrow {
     /// Send a native key combo if there is one in the current layout, otherwise send unicode directly
     debug {
         try {
@@ -319,7 +320,10 @@ void sendUTF16OrKeyCombo(wchar unicodeChar, bool down) nothrow {
         shift = !shift; // Don't press Shift if Capslock is on or temporarily disable Capslock by pressing Shift
     }
 
-    auto scan = Scancode(MapVirtualKeyEx(vk, MAPVK_VK_TO_VSC, lastInputLocale));
+    auto scan = realScan;
+    if (configSendKeyMode == SendKeyMode.FAKE_NATIVE) {
+        scan = Scancode(MapVirtualKeyEx(vk, MAPVK_VK_TO_VSC, lastInputLocale));
+    }
     
     PartialModifierState mods;
 
@@ -402,11 +406,14 @@ void sendNeoKey(NeoKey nk, Scancode realScan, bool down) nothrow {
 
     if (nk.keytype == NeoKeyType.VKEY) {
         Scancode scan = realScan;
-        auto mapResult = MapVirtualKeyEx(nk.vkCode, MAPVK_VK_TO_VSC, lastInputLocale);
-        if (mapResult) {
-            // vk does exist in native layout, use the fake native scan code
-            scan.extended = false;
-            scan.scan = mapResult;
+        // Replace scancode with the one from equivalent key of native layout
+        if (configSendKeyMode == SendKeyMode.FAKE_NATIVE) {
+            auto mapResult = MapVirtualKeyEx(nk.vkCode, MAPVK_VK_TO_VSC, lastInputLocale);
+            if (mapResult) {
+                // vk does exist in native layout, use the fake native scan code
+                scan.extended = false;
+                scan.scan = mapResult;
+            }
         }
 
         PartialModifierState newForcedModifiers;
@@ -421,8 +428,9 @@ void sendNeoKey(NeoKey nk, Scancode realScan, bool down) nothrow {
         }
         sendVKWithModifiers(nk.vkCode, scan, newForcedModifiers, down);
     } else {
+        // Only generate key combinations in standalone mode AND if the user does not insist original scancodes
         if (standaloneModeActive) {
-            sendUTF16OrKeyCombo(nk.charCode, down);
+            sendUTF16OrKeyCombo(realScan, nk.charCode, down);
         } else {
             sendUTF16(nk.charCode, down);
         }

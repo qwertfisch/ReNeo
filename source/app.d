@@ -74,6 +74,7 @@ bool oskOpen;
 
 bool configStandaloneMode;
 NeoLayout *configStandaloneLayout;
+SendKeyMode configSendKeyMode;
 bool configAutoNumlock;
 bool configFilterNeoModifiers;
 HotkeyConfig configHotkeyToggleActivation;
@@ -623,6 +624,16 @@ void initialize() {
             if (configStandaloneLayout == null) {
                 debugWriteln("Standalone layout '", standaloneLayoutName, "' not found!");
             }
+        }
+
+        switch (configJson["sendKeyMode"].str) {
+            case "original":
+                configSendKeyMode = SendKeyMode.ORIGINAL;
+                break;
+            case "fakeNative":
+                configSendKeyMode = SendKeyMode.FAKE_NATIVE;
+                break;
+            default: break;
         }
 
         configAutoNumlock = configJson["autoNumlock"].boolean;
