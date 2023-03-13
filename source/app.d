@@ -75,6 +75,8 @@ bool oskOpen;
 bool configStandaloneMode;
 NeoLayout *configStandaloneLayout;
 SendKeyMode configSendKeyMode;
+bool configRetainScancodes;
+uint configDummyVkCode = 0x8F; // "unassigned" virtual key
 bool configAutoNumlock;
 bool configFilterNeoModifiers;
 HotkeyConfig configHotkeyToggleActivation;
@@ -634,6 +636,11 @@ void initialize() {
                 configSendKeyMode = SendKeyMode.FAKE_NATIVE;
                 break;
             default: break;
+        }
+
+        configRetainScancodes = configJson["retainScancodes"].boolean;
+        if (configJson["dummyVkCode"].type == JSONType.STRING) {
+            configDummyVkCode = configJson["dummyVkCode"].str()[0..2].to!uint(16);
         }
 
         configAutoNumlock = configJson["autoNumlock"].boolean;

@@ -2,6 +2,8 @@
     "standaloneLayout": "Neo",
     "standaloneMode": true,
 	"sendKeyMode": "fakeNative",
+    "retainScancodes": false,
+    "dummyVkCode": "8F",
     "language": "german",
     "filterNeoModifiers": true,
     "autoNumlock": true,

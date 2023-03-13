@@ -15,7 +15,7 @@ import core.sys.windows.windows;
 import mapping;
 import composer;
 import app : configAutoNumlock, configFilterNeoModifiers, configOneHandedModeMirrorKey, configOneHandedModeMirrorMap, updateOSKAsync, toggleOSK, toggleOneHandedMode, lastInputLocale;
-import app : configSendKeyMode;
+import app : configSendKeyMode, configRetainScancodes, configDummyVkCode;
 
 const SC_FAKE_LSHIFT = 0x22A;
 const SC_FAKE_RSHIFT = 0x236;
@@ -145,7 +145,7 @@ void sendVK(uint vk, Scancode scan, bool down) nothrow {
     SendInput(1, &inputStruct, INPUT.sizeof);
 }
 
-void sendUTF16(wchar unicodeChar, bool down) nothrow {
+void sendUTF16(Scancode realScan, wchar unicodeChar, bool down) nothrow {
     INPUT inputStruct;
     inputStruct.type = INPUT_KEYBOARD;
     inputStruct.ki.wVk = 0;
@@ -157,6 +157,11 @@ void sendUTF16(wchar unicodeChar, bool down) nothrow {
     }
 
     SendInput(1, &inputStruct, INPUT.sizeof);
+
+    if (configRetainScancodes) {
+        inputStruct = buildInputStruct(configDummyVkCode, realScan, down);
+        SendInput(1, &inputStruct, INPUT.sizeof);
+    }
 }
 
 const REAL_MODIFIERS = [Modifier.LSHIFT, Modifier.RSHIFT, Modifier.LCTRL, Modifier.RCTRL, Modifier.LALT, Modifier.RALT];
@@ -259,7 +264,7 @@ void sendUTF16OrKeyCombo(Scancode realScan, wchar unicodeChar, bool down) nothro
     if (low == 0xFF || kana || mod5 || mod6) {
         // char does not exist in native layout or requires exotic modifiers
         debugWriteln("No standard key combination found, sending VK packet instead.");
-        sendUTF16(unicodeChar, down);
+        sendUTF16(realScan, unicodeChar, down);
         return;
     }
 
@@ -295,15 +300,15 @@ void sendUTF16OrKeyCombo(Scancode realScan, wchar unicodeChar, bool down) nothro
         // into the queue, while anothèr call consumes the dead key.
         // See https://github.com/Lexikos/AutoHotkey_L/blob/master/source/hook.cpp#L2597
         ToUnicodeEx(vk, 0, kb.ptr, buf.ptr, 4, 0, lastInputLocale);
-        sendUTF16(unicodeChar, down);
+        sendUTF16(realScan, unicodeChar, down);
         return;
     } else if (unicodeTranslationResult == 0) {
         debugWriteln("Key combination does not exist natively, sending VK packet instead.");
-        sendUTF16(unicodeChar, down);
+        sendUTF16(realScan, unicodeChar, down);
         return;
     } else if (buf[0] != unicodeChar) {
         debugWriteln("Key combination does not produce desired character, sending VK packet instead.");
-        sendUTF16(unicodeChar, down);
+        sendUTF16(realScan, unicodeChar, down);
         return;
     }
 
@@ -432,7 +437,7 @@ void sendNeoKey(NeoKey nk, Scancode realScan, bool down) nothrow {
         if (standaloneModeActive) {
             sendUTF16OrKeyCombo(realScan, nk.charCode, down);
         } else {
-            sendUTF16(nk.charCode, down);
+            sendUTF16(realScan, nk.charCode, down);
         }
     }
 }
